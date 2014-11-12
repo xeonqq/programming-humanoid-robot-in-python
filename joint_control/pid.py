@@ -1,5 +1,6 @@
 '''In this exercise you need to implement the PID controller for joints of robot.
 
+
 * Task:
     1. complete the control function in PIDController with prediction
     2. adjust PID parameters for NAO in simulation
@@ -35,10 +36,11 @@ class PIDController(object):
         self.e2 = np.zeros(size)
         # ADJUST PARAMETERS BELOW
         delay = 0
-        self.Kp = 0
-        self.Ki = 0
-        self.Kd = 0
+        self.Kp = 0 #19
+        self.Ki = 0 #0.1
+        self.Kd = 0  #0.1
         self.y = deque(np.zeros(size), maxlen=delay + 1)
+        self.int_err = np.zeros(size)
 
     def set_delay(self, delay):
         '''
@@ -53,7 +55,9 @@ class PIDController(object):
         @return control signal
         '''
         # YOUR CODE HERE
-
+        err = target -sensor
+        self.int_err += err*self.dt
+        self.u = self.Kp*err + self.Ki*self.int_err + self.Kd*err/self.dt
         return self.u
 
 
