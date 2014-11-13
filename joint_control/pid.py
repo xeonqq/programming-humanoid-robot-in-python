@@ -36,8 +36,8 @@ class PIDController(object):
         self.e2 = np.zeros(size)
         # ADJUST PARAMETERS BELOW
         delay = 0
-        self.Kp = 0 #19
-        self.Ki = 0 #0.1
+        self.Kp = 0  #19
+        self.Ki = 0  #0.1
         self.Kd = 0  #0.1
         self.y = deque(np.zeros(size), maxlen=delay + 1)
         self.int_err = np.zeros(size)
@@ -48,7 +48,8 @@ class PIDController(object):
         '''
         self.y = deque(self.y, delay + 1)
 
-    def control(self, target, sensor):
+
+    def control_naive(self, target, sensor):
         '''apply PID control
         @param target: reference values
         @param sensor: current values from sensor
@@ -60,6 +61,23 @@ class PIDController(object):
         self.u = self.Kp*err + self.Ki*self.int_err + self.Kd*err/self.dt
         return self.u
 
+    def control_descretized(self, target, sensor):
+        '''apply PID control
+        @param target: reference values
+        @param sensor: current values from sensor
+        @return control signal
+        '''
+        # YOUR CODE HERE
+        err = target -sensor
+        opt = self.Kd/self.dt
+        self.u = self.u + (self.Kp + self.Ki*self.dt - 2*opt)*err - (self.Kp + 2*opt) * self.e1 + opt * self.e2
+        self.e2 = self.e1 
+        self.e1 = err
+        return self.u
+
+    def control(self, target, sensor):
+        return self.control_naive(target, sensor)
+        #return self.control_descretized(target, sensor) #this behaves differently, dont know why?
 
 class PIDAgent(SparkAgent):
     def __init__(self, simspark_ip='localhost',
