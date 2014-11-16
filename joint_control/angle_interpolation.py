@@ -48,8 +48,8 @@ class AngleInterpolationAgent(PIDAgent):
         target_joints = self.angle_interpolation(self.keyframes)
         self.target_joints.update(target_joints)
         delNonexitJoints(self.target_joints)
-        print "target_joints size after update: %d" % len(target_joints)
-        print self.target_joints
+        #print "target_joints size after update: %d" % len(target_joints)
+        #print self.target_joints
         #return super(PIDAgent, self).think(perception)
         return super(AngleInterpolationAgent, self).think(perception)
 
