@@ -21,8 +21,18 @@
 
 
 from pid import PIDAgent
-from keyframes import hello
+from keyframes import *
 import numpy as np
+
+def delNonexitJoints(d):
+    if "LHand" in d.keys():
+        del d["LHand"]
+    if "RHand" in d.keys():
+        del d["RHand"]
+    if "LWristYaw" in d.keys():
+        del d["LWristYaw"]
+    if "RWristYaw" in d.keys():
+        del d["RWristYaw"]
 
 class AngleInterpolationAgent(PIDAgent):
     def __init__(self, simspark_ip='localhost',
@@ -37,6 +47,7 @@ class AngleInterpolationAgent(PIDAgent):
     def think(self, perception):
         target_joints = self.angle_interpolation(self.keyframes)
         self.target_joints.update(target_joints)
+        delNonexitJoints(self.target_joints)
         print "target_joints size after update: %d" % len(target_joints)
         print self.target_joints
         #return super(PIDAgent, self).think(perception)
@@ -89,5 +100,5 @@ class AngleInterpolationAgent(PIDAgent):
 
 if __name__ == '__main__':
     agent = AngleInterpolationAgent()
-    agent.keyframes = hello()  # CHANGE DIFFERENT KEYFRAMES
+    agent.keyframes = leftBackToStand()  # CHANGE DIFFERENT KEYFRAMES
     agent.run()
