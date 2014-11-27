@@ -23,6 +23,8 @@
 from pid import PIDAgent
 from keyframes import *
 import numpy as np
+import math
+from math import pi
 
 def delNonexitJoints(d):
     if "LHand" in d.keys():
@@ -33,6 +35,9 @@ def delNonexitJoints(d):
         del d["LWristYaw"]
     if "RWristYaw" in d.keys():
         del d["RWristYaw"]
+
+def bezier(p0,p1,p2,p3,t):
+    return ((1-t)**3)*p0 + 3*((1-t)**2)*t*p1 + 3*(1-t)*t**2*p2 + t**3*p3
 
 class AngleInterpolationAgent(PIDAgent):
     def __init__(self, simspark_ip='localhost',
@@ -75,22 +80,35 @@ class AngleInterpolationAgent(PIDAgent):
                     angle1 = keys[joint][i+1][0]
                     dTime0 = keys[joint][i][2][1] #second handle of angel1 -> exiting p0
                     dAngle0 = keys[joint][i][2][2]
-                    dTime1 = keys[joint][i+1][1][1] #first handle of angel2 -> preceding p4
+                    dTime1 = keys[joint][i+1][1][1] #first handle of angel2 -> preceding p3
                     dAngle1 = keys[joint][i+1][1][2]
             
-                    delta_T = t1 - t0
                     p0 = np.asarray([t0,angle0])
                     p1 = np.asarray([(t0+dTime0), angle0+dAngle0])
                     p3 = np.asarray([t1,angle1])
                     p2 = np.asarray([t1+dTime1, angle1+dAngle1])
-                    p = np.asarray([p0, p1, p2, p3])
-                    p[:,0] = (p[:,0] - t0)/delta_T #normalize
-                    t = (self.local_time - t0)/delta_T
-                    #print "t in [0,1]= %f, t0 = %f, t1 =%f" % (t,t0,t1)
-                    target_angel = ((1-t)**3)*p[0,:] + 3*((1-t)**2)*t*p[1,:] + 3*(1-t)*t**2*p[2,:] + t**3*p[3,:]
-                    #print names[joint]
-                    #print target_angel
-                    target_joints[names[joint]] = target_angel[1]
+
+                    #binary search 
+                    s0=0.0
+                    s1=1.0
+                    s = (s0+s1)/2
+                    ts = bezier(p0[0],p1[0],p2[0],p3[0],s)
+                    for i in range(100):
+                        te = self.local_time -ts 
+                        if math.fabs(te) < 1e-6:
+                            break
+                        if te > 0:
+                            s0 =s
+                        else:
+                            s1 =s
+                        s= (s0+s1)/2
+                        ts = bezier(p0[0],p1[0],p2[0],p3[0],s)
+
+                    target_angle = bezier(p0[1],p1[1],p2[1],p3[1],s)
+                    #print "t: ", s
+
+                    #print names[joint], target_angle
+                    target_joints[names[joint]] = target_angle
                     break
         #print "calucated target_joints"
         #print target_joints
@@ -100,5 +118,5 @@ class AngleInterpolationAgent(PIDAgent):
 
 if __name__ == '__main__':
     agent = AngleInterpolationAgent()
-    agent.keyframes = leftBackToStand()  # CHANGE DIFFERENT KEYFRAMES
+    agent.keyframes = rightBellyToStand()  # CHANGE DIFFERENT KEYFRAMES
     agent.run()
